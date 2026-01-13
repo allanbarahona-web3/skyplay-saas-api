@@ -1,0 +1,76 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+tgcodes_backup.sql
+
+# Prisma
+prisma/*.db
+prisma/*.db-shm
+prisma/*.db-wal
+
+# NestJS specific
+dist/
+node_modules/
+
+# Testing
+coverage/
+.nyc_output/
+
+# IDE extensions
+.vscode/extensions.json
+.vscode/settings.json
+
+# Environment-specific
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Misc
+.cache/
+.turbo/

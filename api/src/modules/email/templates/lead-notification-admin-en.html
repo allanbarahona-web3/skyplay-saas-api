@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Lead!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background-color: #ffffff;
+            color: {{brandColor}};
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 3px solid {{brandColor}};
+        }
+        
+        .logo {
+            max-width: 180px;
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto 15px;
+            border-radius: 8px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px 20px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            border-bottom: 2px solid {{brandColor}};
+            padding-bottom: 8px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            width: 40%;
+        }
+        
+        .info-value {
+            color: #333;
+            word-break: break-all;
+            text-align: right;
+            width: 60%;
+        }
+        
+        .action-buttons {
+            margin-top: 30px;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 0 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: #1e3a8a;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #15264e;
+        }
+        
+        .highlight {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 3px;
+            font-size: 14px;
+            color: #856404;
+        }
+        
+        .footer {
+            background-color: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #eee;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <img src="{{tenantLogo}}" alt="{{tenantName}}" class="logo">
+            <h1>🎯 New Lead!</h1>
+            <p>A new inquiry has been submitted to {{tenantName}}</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Contact Information -->
+            <div class="section">
+                <div class="section-title">📋 Contact Information</div>
+                <div class="info-row">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value"><strong>{{fullName}}</strong></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{email}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Phone/WhatsApp:</span>
+                    <span class="info-value">{{whatsappNumber}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Business:</span>
+                    <span class="info-value">{{businessName}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Website:</span>
+                    <span class="info-value">{{website}}</span>
+                </div>
+            </div>
+            
+            <!-- Request Details -->
+            <div class="section">
+                <div class="section-title">💼 Request Details</div>
+                {{#if service}}
+                <div class="info-row">
+                    <span class="info-label">Service:</span>
+                    <span class="info-value">{{service}}</span>
+                </div>
+                {{/if}}
+                {{#if currentSetup}}
+                <div class="info-row">
+                    <span class="info-label">Current Setup:</span>
+                    <span class="info-value">{{currentSetup}}</span>
+                </div>
+                {{/if}}
+                {{#if budgetRange}}
+                <div class="info-row">
+                    <span class="info-label">Budget:</span>
+                    <span class="info-value">{{budgetRange}}</span>
+                </div>
+                {{/if}}
+                {{#if mostImportantRightNow}}
+                <div class="info-row">
+                    <span class="info-label">Priority:</span>
+                    <span class="info-value">{{mostImportantRightNow}}</span>
+                </div>
+                {{/if}}
+                {{#if commitment2To3Months}}
+                <div class="info-row">
+                    <span class="info-label">2-3 Month Commitment:</span>
+                    <span class="info-value">{{commitment2To3Months}}</span>
+                </div>
+                {{/if}}
+                {{#if biggestPainPoint}}
+                <div class="info-row">
+                    <span class="info-label">Main Challenge:</span>
+                    <span class="info-value">{{biggestPainPoint}}</span>
+                </div>
+                {{/if}}
+                {{#if salesFollowUpPerson}}
+                <div class="info-row">
+                    <span class="info-label">Sales Contact:</span>
+                    <span class="info-value">{{salesFollowUpPerson}}</span>
+                </div>
+                {{/if}}
+            </div>
+            
+            <!-- Highlight -->
+            <div class="highlight">
+                ⚡ <strong>Action Required:</strong> This is a new lead. It's recommended to contact them as soon as possible while their interest is fresh.
+            </div>
+            
+            <!-- Metadata -->
+            <div class="section" style="font-size: 12px; color: #999;">
+                <div class="info-row">
+                    <span class="info-label">Lead ID:</span>
+                    <span class="info-value">{{leadId}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Date:</span>
+                    <span class="info-value">{{createdAt}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Status:</span>
+                    <span class="info-value"><span class="status-badge">{{status}}</span></span>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{{dashboardLink}}" class="btn btn-primary" style="background-color: {{brandColor}} !important; color: white !important; display: inline-block; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: 600;">View in Dashboard</a>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>{{tenantName}}</strong></p>
+            {{#if supportEmail}}
+            <p><a href="mailto:{{supportEmail}}" style="color: {{brandColor}}; text-decoration: none;">{{supportEmail}}</a></p>
+            {{/if}}
+            {{#if ein}}
+            <p>EIN: {{ein}}</p>
+            {{/if}}
+            {{#if street}}
+            <p>{{street}}<br>{{#if city}}{{city}}, {{/if}}{{#if state}}{{state}} {{/if}}{{#if zipCode}}{{zipCode}}{{/if}}<br>{{#if country}}{{country}}{{/if}}</p>
+            {{/if}}
+            {{#if phone}}
+            <p>Phone: {{phone}}</p>
+            {{/if}}
+            <p style="margin-top: 15px; font-size: 11px;">This is an automated email sent by {{tenantName}}. Please do not reply to this email.</p>
+            <p style="margin-top: 10px; font-size: 11px;">© 2025 {{tenantName}}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Confirmation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background-color: #ffffff;
+            color: {{brandColor}};
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 3px solid {{brandColor}};
+        }
+        
+        .logo {
+            max-width: 180px;
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto 15px;
+            border-radius: 8px;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .checkmark {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.95;
+        }
+        
+        .content {
+            padding: 40px 20px;
+        }
+        
+        .greeting {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+        
+        .greeting strong {
+            color: {{brandColor}};
+        }
+        
+        .info-box {
+            background-color: #f8f9ff;
+            border-left: 4px solid {{brandColor}};
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        
+        .info-box h3 {
+            color: {{brandColor}};
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .info-box p {
+            color: #666;
+            font-size: 14px;
+            margin: 8px 0;
+        }
+        
+        .highlight-text {
+            color: {{brandColor}};
+            font-weight: 600;
+        }
+        
+        .steps {
+            margin: 30px 0;
+        }
+        
+        .step {
+            display: flex;
+            margin: 20px 0;
+        }
+        
+        .step-number {
+            min-width: 60px;
+            width: 60px;
+            height: 60px;
+            color: {{brandColor}};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+            font-size: 48px;
+        }
+        
+        .step-content h4 {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        
+        .step-content p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: #eee;
+            margin: 30px 0;
+        }
+        
+        .cta-button {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 14px 35px;
+            background-color: {{brandColor}};
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+        
+        .btn:hover {
+            background-color: {{brandColorDark}};
+            transform: translateY(-2px);
+        }
+        
+        .contact-info {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .contact-info p {
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        
+        .contact-info strong {
+            color: #333;
+        }
+        
+        .footer {
+            background-color: #f9f9f9;
+            padding: 25px 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #eee;
+        }
+        
+        .footer p {
+            margin: 8px 0;
+        }
+        
+        .social-links {
+            margin-top: 15px;
+        }
+        
+        .social-links a {
+            color: {{brandColor}};
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <img src="{{tenantLogo}}" alt="{{tenantName}}" class="logo">
+            <div class="checkmark">✓</div>
+            <h1>Thank you {{fullName}}!</h1>
+            <p>Your request has been received successfully</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Greeting -->
+            <div class="greeting">
+                We're delighted to receive your information request about <span class="highlight-text">{{service}}</span>. Your message has been registered in our system and we will review it carefully.
+            </div>
+            
+            <!-- Confirmation Box -->
+            <div class="info-box">
+                <h3>📝 Summary of your request</h3>
+                <p><strong>Contact email:</strong> {{email}}</p>
+                {{#if whatsappNumber}}
+                <p><strong>WhatsApp:</strong> {{whatsappNumber}}</p>
+                {{/if}}
+                <p><strong>Company:</strong> {{businessName}}</p>
+                {{#if budgetRange}}
+                <p><strong>Estimated budget:</strong> {{budgetRange}}</p>
+                {{/if}}
+            </div>
+            
+            <!-- Next Steps -->
+            <div style="margin-top: 30px;">
+                <h3 style="color: #333; margin-bottom: 20px; font-size: 18px;">🚀 What happens next?</h3>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">📋</div>
+                        <div class="step-content">
+                            <h4>We review your request</h4>
+                            <p>Our team will analyze the details you've shared to better understand your needs.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">📱</div>
+                        <div class="step-content">
+                            <h4>We'll be in touch soon</h4>
+                            <p>A representative will contact you within <span class="highlight-text">24 to 36 hours</span> via your WhatsApp {{whatsappNumber}} or registered email.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">💡</div>
+                        <div class="step-content">
+                            <h4>We present our solution</h4>
+                            <p>We'll discuss how we can help you achieve your business objectives.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Contact Info -->
+            <div class="contact-info">
+                <p>Have questions or need more information?</p>
+                <p><strong>Email:</strong> {{supportEmail}}</p>
+                <p><strong>Support hours:</strong> Monday to Friday, 9:00 AM - 6:00 PM</p>
+            </div>
+            
+            <!-- Important Note -->
+            <div class="info-box" style="border-left-color: #28a745; background-color: #f1f8f5;">
+                <h3 style="color: #28a745;">💡 Important tip</h3>
+                <p>Add our email to your contacts to ensure our messages don't end up in your spam folder. We'd like to maintain smooth communication with you.</p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>{{tenantName}}</strong></p>
+            {{#if street}}
+            <p>{{street}}<br>{{#if city}}{{city}}, {{/if}}{{#if state}}{{state}} {{/if}}{{#if zipCode}}{{zipCode}}{{/if}}<br>{{#if country}}{{country}}{{/if}}</p>
+            {{/if}}
+            {{#if phone}}
+            <p>Phone: {{phone}}</p>
+            {{/if}}
+            <p style="margin-top: 12px; font-size: 11px; color: #bbb;">
+                This is an automated email. Please do not reply to this message.
+            </p>
+            <p style="margin-top: 8px; font-size: 11px;">
+                © 2025 {{tenantName}}. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

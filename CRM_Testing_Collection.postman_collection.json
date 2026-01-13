@@ -1,0 +1,189 @@
+{
+  "info": {
+    "name": "CRM Testing Collection",
+    "description": "Testing endpoints for CRM module without real providers",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "1. Create Test Conversation",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/crm-test/create-conversation",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_JWT_TOKEN_HERE"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenantId\": 1,\n  \"channel\": \"whatsapp\",\n  \"channelUserId\": \"50670123456\",\n  \"channelUsername\": \"Juan Perez\"\n}"
+        },
+        "description": "Create a new test conversation for a customer"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Send Test Message (Outbound)",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/crm-test/send-message",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_JWT_TOKEN_HERE"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenantId\": 1,\n  \"conversationId\": \"CONVERSATION_ID_FROM_STEP_1\",\n  \"content\": \"Hola! ¿Cómo puedo ayudarte?\",\n  \"mediaUrl\": null\n}"
+        },
+        "description": "Send an outbound message from the staff"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Simulate Incoming Message (Inbound)",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/crm-test/simulate-incoming-message",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_JWT_TOKEN_HERE"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenantId\": 1,\n  \"channel\": \"whatsapp\",\n  \"channelUserId\": \"50670123456\",\n  \"channelUsername\": \"Juan Perez\",\n  \"content\": \"Necesito ayuda con mi pedido\",\n  \"mediaUrl\": null\n}"
+        },
+        "description": "Simulate a customer sending an inbound message"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Test Meta Webhook - WhatsApp",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/crm-test/webhook-meta",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_JWT_TOKEN_HERE"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenantId\": 1,\n  \"channel\": \"whatsapp\",\n  \"senderId\": \"50670123456\",\n  \"senderName\": \"Juan Perez\",\n  \"messageText\": \"Hola, quiero hacer un pedido\",\n  \"mediaUrl\": null\n}"
+        },
+        "description": "Test a WhatsApp webhook from Meta"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Test Meta Webhook - Instagram",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/crm-test/webhook-meta",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_JWT_TOKEN_HERE"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenantId\": 1,\n  \"channel\": \"instagram\",\n  \"senderId\": \"123456789\",\n  \"senderName\": \"instagram_user\",\n  \"messageText\": \"Me gusta tu producto!\",\n  \"mediaUrl\": \"https://example.com/image.jpg\"\n}"
+        },
+        "description": "Test an Instagram DM webhook from Meta"
+      },
+      "response": []
+    },
+    {
+      "name": "6. Get All Conversations",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/crm/conversations?channel=whatsapp&isActive=true&limit=50&offset=0",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_JWT_TOKEN_HERE"
+          }
+        ],
+        "description": "List all conversations for a tenant"
+      },
+      "response": []
+    },
+    {
+      "name": "7. Get Conversation Details",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/crm/conversations/CONVERSATION_ID?limit=100&offset=0",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_JWT_TOKEN_HERE"
+          }
+        ],
+        "description": "Get details of a specific conversation with messages"
+      },
+      "response": []
+    },
+    {
+      "name": "8. Health Check",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/crm-test/health",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenantId\": 1,\n  \"channel\": \"whatsapp\"\n}"
+        },
+        "description": "Check if a channel is healthy"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}

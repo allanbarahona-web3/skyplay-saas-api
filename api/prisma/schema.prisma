@@ -1,0 +1,629 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// ENUMS
+// ========================================
+
+enum TenantStatus {
+  active
+  suspended
+  trial
+  cancelled
+}
+
+enum BillingStatus {
+  ok
+  past_due
+  unpaid
+}
+
+enum TenantUserRole {
+  admin      // Superadmin global (Barmentech) - acceso a TODO
+  owner      // Owner del tenant - acceso solo a su tenant
+  manager    // Manager del tenant - acceso solo a su tenant
+  staff      // Personal del tenant - acceso de lectura a su tenant
+  customer   // Cliente final - acceso solo a sus órdenes/datos personales
+}
+
+enum UserStatus {
+  active
+  inactive
+  suspended
+}
+
+enum ProductKind {
+  physical
+  digital
+}
+
+enum OrderStatus {
+  pending
+  paid
+  shipped
+  delivered
+  cancelled
+  refunded
+}
+
+enum PaymentStatus {
+  pending
+  authorized
+  paid
+  failed
+  refunded
+}
+
+enum PaymentProvider {
+  stripe
+  paypal
+  manual
+}
+
+enum ChannelType {
+  whatsapp
+  instagram
+  facebook
+  telegram
+  tiktok
+  sms
+  email
+}
+
+enum MessageDirection {
+  inbound   // Recibido del cliente
+  outbound  // Enviado por el staff
+}
+
+enum MessageStatus {
+  pending
+  sent
+  delivered
+  read
+  failed
+}
+
+
+
+enum StreamingService {
+  netflix
+  disney_plus
+  hulu
+  amazon_prime
+  hbo_max
+  paramount_plus
+  apple_tv
+  peacock
+  other
+}
+
+enum ServiceStatus {
+  active
+  paused
+  expired
+}
+
+enum BillingEventType {
+  payment
+  refund
+  subscription_renewed
+  charge_failed
+  subscription_created
+  subscription_cancelled
+}
+
+enum BillingEventStatus {
+  pending
+  completed
+  failed
+}
+
+enum BillingCurrency {
+  USD
+  CRC
+  MXN
+  EUR
+}
+
+// ========================================
+// TENANT (Base del multi-tenant)
+// ========================================
+
+model Tenant {
+  id               Int              @id @default(autoincrement())
+  name             String
+  slug             String           @unique
+  status           TenantStatus     @default(active)
+  billingStatus    BillingStatus    @default(ok)
+  industry         String?
+  config           Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relaciones
+  tenantUsers TenantUser[]
+  customers   Customer[]
+  products    Product[]
+  orders      Order[]
+  orderItems  OrderItem[]
+  payments    Payment[]
+  sessions    AuthSession[]
+  domains     TenantDomain[]
+  categories  Category[]
+  media       Media[]
+  conversations Conversation[]
+  messages    Message[]
+  leads       Lead[]
+  credentials Credential[]
+  services    Service[]
+  billingEvents BillingEvent[]
+
+  @@map("tenants")
+}
+
+// ========================================
+// USUARIOS INTERNOS DE LA TIENDA
+// ========================================
+
+model TenantUser {
+  id           String         @id @default(uuid())
+  tenantId     Int
+  email        String
+  passwordHash String
+  name         String
+  role         TenantUserRole @default(staff)
+  status       UserStatus     @default(active)
+  tokenVersion Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  // Relaciones
+  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessions AuthSession[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("tenant_users")
+}
+
+// ========================================
+// CLIENTES FINALES DE LA TIENDA
+// ========================================
+
+model Customer {
+  id        String     @id @default(uuid())
+  tenantId  Int
+  email     String
+  name      String
+  phone     String?
+  status    UserStatus @default(active)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relaciones
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders Order[]
+  conversations Conversation[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("customers")
+}
+
+// ========================================
+// CATEGORÍAS (Para organizar productos)
+// ========================================
+
+model Category {
+  id          String   @id @default(uuid())
+  tenantId    Int
+  name        String
+  slug        String
+  description String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+  @@map("categories")
+}
+
+// ========================================
+// MEDIA (Imágenes para todas las entidades)
+// ========================================
+
+model Media {
+  id        String   @id @default(uuid())
+  tenantId  Int
+  
+  // Campo genérico para relacionar con cualquier entidad
+  entityType  String  // "category", "product", "tenant_branding", "hero"
+  entityId    String  // ID de la categoría, producto, etc
+  
+  // Path relativo en DO Spaces
+  path      String   // "tenants/2/categories/defensa-personal.jpg"
+  alt       String?
+  order     Int      @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([tenantId, entityType])
+  @@map("media")
+}
+
+// ========================================
+// PRODUCTOS
+// ========================================
+
+model Product {
+  id          String      @id @default(uuid())
+  tenantId    Int
+  categoryId  String?
+  name        String
+  slug        String
+  description String?
+  productKind ProductKind @default(physical)
+  isActive    Boolean     @default(true)
+  price       Int
+  currency    String      @default("USD")
+  stock       Int         @default(0)
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relaciones
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category   Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  orderItems OrderItem[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([categoryId])
+  @@map("products")
+}
+
+// ========================================
+// ÓRDENES
+// ========================================
+
+model Order {
+  id             String      @id @default(uuid())
+  tenantId       Int
+  orderNumber    String
+  customerId     String?
+  status         OrderStatus @default(pending)
+  subtotalAmount Int
+  taxAmount      Int         @default(0)
+  shippingAmount Int         @default(0)
+  discountAmount Int         @default(0)
+  totalAmount    Int
+  currency       String      @default("USD")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relaciones
+  tenant   Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items    OrderItem[]
+  payments Payment[]
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId])
+  @@index([customerId])
+  @@map("orders")
+}
+
+// ========================================
+// ÍTEMS DE ORDEN
+// ========================================
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  tenantId   Int
+  orderId    String
+  productId  String
+  quantity   Int
+  unitPrice  Int
+  totalPrice Int
+  createdAt  DateTime @default(now())
+
+  // Relaciones
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// ========================================
+// PAGOS
+// ========================================
+
+model Payment {
+  id                 String          @id @default(uuid())
+  tenantId           Int
+  orderId            String
+  status             PaymentStatus   @default(pending)
+  amount             Int
+  currency           String          @default("USD")
+  provider           PaymentProvider @default(manual)
+  providerPaymentId  String?
+  idempotencyKey     String
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  // Relaciones
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId])
+  @@index([orderId])
+  @@map("payments")
+}
+
+// ========================================
+// TENANT DOMAINS (Multi-domain routing para SaaS)
+// ========================================
+
+model TenantDomain {
+  id                Int       @id @default(autoincrement())
+  tenantId          Int
+  domain            String    @unique
+  isPrimary         Boolean   @default(true)
+  verificationToken String?
+  verifiedAt        DateTime?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relaciones
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, domain])
+  @@index([domain])
+  @@index([tenantId])
+  @@map("tenant_domains")
+}
+
+// ========================================
+// SESIONES Y TOKENS (para ACID)
+// ========================================
+
+model AuthSession {
+  id               String   @id @default(uuid())
+  userId           String
+  tenantId         Int
+  jti              String   @unique
+  refreshToken     String   @unique
+  accessTokenJti   String?
+  isRevoked        Boolean  @default(false)
+  ipAddress        String?
+  userAgent        String?
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  lastUsedAt       DateTime @default(now())
+
+  // Relaciones
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   TenantUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([jti])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+// ========================================
+// CRM - CONVERSACIONES
+// ========================================
+
+model Conversation {
+  id              String      @id @default(uuid())
+  tenantId        Int
+  customerId      String?     // ID del customer si es conocido
+  channel         ChannelType
+  channelUserId   String      // ID del usuario en el canal (teléfono, username, etc)
+  channelUsername String?     // Nombre de usuario en el canal (opcional)
+  isActive        Boolean     @default(true)
+  lastMessageAt   DateTime?
+  metadata        Json?       // Extra data específica del canal
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relaciones
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  messages Message[]
+
+  @@unique([tenantId, channel, channelUserId])
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([channel])
+  @@index([isActive])
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+// ========================================
+// CRM - MENSAJES
+// ========================================
+
+model Message {
+  id              String         @id @default(uuid())
+  tenantId        Int
+  conversationId  String
+  direction       MessageDirection
+  content         String
+  mediaUrl        String?        // URL de imagen/video si aplica
+  channel         ChannelType
+  status          MessageStatus  @default(pending)
+  externalId      String?        // ID del mensaje en el proveedor (WhatsApp, Telegram, etc)
+  metadata        Json?          // Extra data específica del canal
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relaciones
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([conversationId])
+  @@index([channel])
+  @@index([status])
+  @@index([direction])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// ========================================
+// LEADS (Formularios landing page)
+// ========================================
+
+model Lead {
+  id                      String    @id @default(uuid())
+  tenantId                Int?      // Nullable: leads sin tenant (anónimos) | cuando se convierte a tenant, se asigna el tenantId
+  
+  // Información del negocio
+  businessName            String?
+  fullName                String
+  email                   String
+  whatsappNumber          String
+  website                 String?
+  message                 String?
+  
+  // Información del formulario
+  currentSetup            String?
+  budgetRange             String?
+  salesFollowUpPerson     String?
+  mostImportantRightNow   String?
+  commitment2To3Months    String?
+  biggestPainPoint        String?
+  language                String?
+  service                 String?
+  
+  // Metadata
+  status                  String    @default("new") // new, contacted, converted, rejected
+  notes                   String?
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // Relaciones
+  tenant                  Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  
+  @@index([tenantId])
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@map("leads")
+}
+// ========================================
+// STREAMING - CREDENCIALES
+// ========================================
+
+model Credential {
+  id               String          @id @default(uuid())
+  tenantId         Int
+  serviceName      StreamingService
+  email            String
+  password         String          // Encriptada en la aplicación
+  pin              String?         // Opcional
+  maxProfiles      Int?            // Opcional
+  sharedWith       Json?           // Opcional: array de información de perfiles compartidos
+  isActive         Boolean         @default(true)
+  accessExpiresAt  DateTime?       // Opcional: fecha de expiración del acceso
+  metadata         Json?           // Extra data específica del servicio
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // Relaciones
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  services Service[]
+
+  @@unique([tenantId, serviceName, email])
+  @@index([tenantId])
+  @@index([serviceName])
+  @@index([isActive])
+  @@map("credentials")
+}
+
+// ========================================
+// STREAMING - SERVICIOS ACTIVOS
+// ========================================
+
+model Service {
+  id                 String        @id @default(uuid())
+  tenantId           Int
+  credentialId       String
+  serviceName        StreamingService
+  monthlySubscribers Int           @default(0)
+  profileCount       Int           @default(0)
+  status             ServiceStatus @default(active)
+  metadata           Json?         // Extra data (price, renewal date, etc)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  // Relaciones
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  credential Credential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, credentialId])
+  @@index([tenantId])
+  @@index([credentialId])
+  @@index([serviceName])
+  @@index([status])
+  @@map("services")
+}
+
+// ========================================
+// BILLING - AUDITORÍA DE TRANSACCIONES
+// ========================================
+
+model BillingEvent {
+  id          String              @id @default(uuid())
+  tenantId    Int
+  eventType   BillingEventType
+  status      BillingEventStatus  @default(pending)
+  amount      Int                 // En centavos
+  currency    BillingCurrency     @default(USD)
+  metadata    Json?               // { orderId, paymentProvider, transactionId, description, etc }
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  // Relaciones
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([eventType])
+  @@index([status])
+  @@index([createdAt])
+  @@map("billing_events")
+}
