@@ -28,11 +28,11 @@ enum BillingStatus {
 }
 
 enum TenantUserRole {
-  admin      // Superadmin global (Barmentech) - acceso a TODO
-  owner      // Owner del tenant - acceso solo a su tenant
-  manager    // Manager del tenant - acceso solo a su tenant
-  staff      // Personal del tenant - acceso de lectura a su tenant
-  customer   // Cliente final - acceso solo a sus órdenes/datos personales
+  admin // Superadmin global (Barmentech) - acceso a TODO
+  owner // Owner del tenant - acceso solo a su tenant
+  manager // Manager del tenant - acceso solo a su tenant
+  staff // Personal del tenant - acceso de lectura a su tenant
+  customer // Cliente final - acceso solo a sus órdenes/datos personales
 }
 
 enum UserStatus {
@@ -80,8 +80,8 @@ enum ChannelType {
 }
 
 enum MessageDirection {
-  inbound   // Recibido del cliente
-  outbound  // Enviado por el staff
+  inbound // Recibido del cliente
+  outbound // Enviado por el staff
 }
 
 enum MessageStatus {
@@ -91,8 +91,6 @@ enum MessageStatus {
   read
   failed
 }
-
-
 
 enum StreamingService {
   netflix
@@ -139,33 +137,41 @@ enum BillingCurrency {
 // ========================================
 
 model Tenant {
-  id               Int              @id @default(autoincrement())
-  name             String
-  slug             String           @unique
-  status           TenantStatus     @default(active)
-  billingStatus    BillingStatus    @default(ok)
-  industry         String?
-  config           Json?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id            Int           @id @default(autoincrement())
+  name          String
+  slug          String        @unique
+  status        TenantStatus  @default(active)
+  billingStatus BillingStatus @default(ok)
+  industry      String?
+  config        Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   // Relaciones
-  tenantUsers TenantUser[]
-  customers   Customer[]
-  products    Product[]
-  orders      Order[]
-  orderItems  OrderItem[]
-  payments    Payment[]
-  sessions    AuthSession[]
-  domains     TenantDomain[]
-  categories  Category[]
-  media       Media[]
-  conversations Conversation[]
-  messages    Message[]
-  leads       Lead[]
-  credentials Credential[]
-  services    Service[]
-  billingEvents BillingEvent[]
+  tenantUsers       TenantUser[]
+  customers         Customer[]
+  products          Product[]
+  orders            Order[]
+  orderItems        OrderItem[]
+  payments          Payment[]
+  sessions          AuthSession[]
+  domains           TenantDomain[]
+  categories        Category[]
+  media             Media[]
+  conversations     Conversation[]
+  messages          Message[]
+  leads             Lead[]
+  credentials       Credential[]
+  services          Service[]
+  billingEvents     BillingEvent[]
+  entitlements      TenantEntitlement[]
+  subscriptions     TenantSubscription[]
+  pricingRules      TenantPricingRule[]
+  wallet            TenantWallet?
+  digitalDeliveries DigitalDelivery[]
+  crmAutomations    CrmAutomation[]
+  crmOutbox         CrmOutbox[]
+  WalletTransaction WalletTransaction[]
 
   @@map("tenants")
 }
@@ -210,9 +216,11 @@ model Customer {
   updatedAt DateTime   @updatedAt
 
   // Relaciones
-  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  orders Order[]
-  conversations Conversation[]
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders            Order[]
+  conversations     Conversation[]
+  digitalDeliveries DigitalDelivery[]
+  crmOutbox         CrmOutbox[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -235,8 +243,9 @@ model Category {
   updatedAt   DateTime @updatedAt
 
   // Relaciones
-  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  products Product[]
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products     Product[]
+  pricingRules TenantPricingRule[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -249,23 +258,23 @@ model Category {
 // ========================================
 
 model Media {
-  id        String   @id @default(uuid())
-  tenantId  Int
-  
+  id       String @id @default(uuid())
+  tenantId Int
+
   // Campo genérico para relacionar con cualquier entidad
-  entityType  String  // "category", "product", "tenant_branding", "hero"
-  entityId    String  // ID de la categoría, producto, etc
-  
+  entityType String // "category", "product", "tenant_branding", "hero"
+  entityId   String // ID de la categoría, producto, etc
+
   // Path relativo en DO Spaces
-  path      String   // "tenants/2/categories/defensa-personal.jpg"
-  alt       String?
-  order     Int      @default(0)
-  
+  path  String // "tenants/2/categories/defensa-personal.jpg"
+  alt   String?
+  order Int     @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relaciones
-  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([entityType])
@@ -295,9 +304,11 @@ model Product {
   updatedAt   DateTime    @updatedAt
 
   // Relaciones
-  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category   Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  orderItems OrderItem[]
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category     Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  orderItems   OrderItem[]
+  pricingRules TenantPricingRule[]
+  Credential   Credential[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -325,10 +336,11 @@ model Order {
   updatedAt      DateTime    @updatedAt
 
   // Relaciones
-  tenant   Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  items    OrderItem[]
-  payments Payment[]
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer          Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items             OrderItem[]
+  payments          Payment[]
+  digitalDeliveries DigitalDelivery[]
 
   @@unique([tenantId, orderNumber])
   @@index([tenantId])
@@ -351,9 +363,10 @@ model OrderItem {
   createdAt  DateTime @default(now())
 
   // Relaciones
-  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order             Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product           Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  digitalDeliveries DigitalDelivery[]
 
   @@index([tenantId])
   @@index([orderId])
@@ -366,17 +379,17 @@ model OrderItem {
 // ========================================
 
 model Payment {
-  id                 String          @id @default(uuid())
-  tenantId           Int
-  orderId            String
-  status             PaymentStatus   @default(pending)
-  amount             Int
-  currency           String          @default("USD")
-  provider           PaymentProvider @default(manual)
-  providerPaymentId  String?
-  idempotencyKey     String
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  id                String          @id @default(uuid())
+  tenantId          Int
+  orderId           String
+  status            PaymentStatus   @default(pending)
+  amount            Int
+  currency          String          @default("USD")
+  provider          PaymentProvider @default(manual)
+  providerPaymentId String?
+  idempotencyKey    String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   // Relaciones
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -417,18 +430,18 @@ model TenantDomain {
 // ========================================
 
 model AuthSession {
-  id               String   @id @default(uuid())
-  userId           String
-  tenantId         Int
-  jti              String   @unique
-  refreshToken     String   @unique
-  accessTokenJti   String?
-  isRevoked        Boolean  @default(false)
-  ipAddress        String?
-  userAgent        String?
-  expiresAt        DateTime
-  createdAt        DateTime @default(now())
-  lastUsedAt       DateTime @default(now())
+  id             String   @id @default(uuid())
+  userId         String
+  tenantId       Int
+  jti            String   @unique
+  refreshToken   String   @unique
+  accessTokenJti String?
+  isRevoked      Boolean  @default(false)
+  ipAddress      String?
+  userAgent      String?
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  lastUsedAt     DateTime @default(now())
 
   // Relaciones
   tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -448,18 +461,18 @@ model AuthSession {
 model Conversation {
   id              String      @id @default(uuid())
   tenantId        Int
-  customerId      String?     // ID del customer si es conocido
+  customerId      String? // ID del customer si es conocido
   channel         ChannelType
-  channelUserId   String      // ID del usuario en el canal (teléfono, username, etc)
-  channelUsername String?     // Nombre de usuario en el canal (opcional)
+  channelUserId   String // ID del usuario en el canal (teléfono, username, etc)
+  channelUsername String? // Nombre de usuario en el canal (opcional)
   isActive        Boolean     @default(true)
   lastMessageAt   DateTime?
-  metadata        Json?       // Extra data específica del canal
+  metadata        Json? // Extra data específica del canal
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
   // Relaciones
-  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   messages Message[]
 
@@ -477,21 +490,21 @@ model Conversation {
 // ========================================
 
 model Message {
-  id              String         @id @default(uuid())
-  tenantId        Int
-  conversationId  String
-  direction       MessageDirection
-  content         String
-  mediaUrl        String?        // URL de imagen/video si aplica
-  channel         ChannelType
-  status          MessageStatus  @default(pending)
-  externalId      String?        // ID del mensaje en el proveedor (WhatsApp, Telegram, etc)
-  metadata        Json?          // Extra data específica del canal
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id             String           @id @default(uuid())
+  tenantId       Int
+  conversationId String
+  direction      MessageDirection
+  content        String
+  mediaUrl       String? // URL de imagen/video si aplica
+  channel        ChannelType
+  status         MessageStatus    @default(pending)
+  externalId     String? // ID del mensaje en el proveedor (WhatsApp, Telegram, etc)
+  metadata       Json? // Extra data específica del canal
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   // Relaciones
-  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
@@ -508,68 +521,83 @@ model Message {
 // ========================================
 
 model Lead {
-  id                      String    @id @default(uuid())
-  tenantId                Int?      // Nullable: leads sin tenant (anónimos) | cuando se convierte a tenant, se asigna el tenantId
-  
+  id       String @id @default(uuid())
+  tenantId Int? // Nullable: leads sin tenant (anónimos) | cuando se convierte a tenant, se asigna el tenantId
+
   // Información del negocio
-  businessName            String?
-  fullName                String
-  email                   String
-  whatsappNumber          String
-  website                 String?
-  message                 String?
-  
+  businessName   String?
+  fullName       String
+  email          String
+  whatsappNumber String
+  website        String?
+  message        String?
+
   // Información del formulario
-  currentSetup            String?
-  budgetRange             String?
-  salesFollowUpPerson     String?
-  mostImportantRightNow   String?
-  commitment2To3Months    String?
-  biggestPainPoint        String?
-  language                String?
-  service                 String?
-  
+  currentSetup          String?
+  budgetRange           String?
+  salesFollowUpPerson   String?
+  mostImportantRightNow String?
+  commitment2To3Months  String?
+  biggestPainPoint      String?
+  language              String?
+  service               String?
+
   // Metadata
-  status                  String    @default("new") // new, contacted, converted, rejected
-  notes                   String?
-  
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
-  
+  status String  @default("new") // new, contacted, converted, rejected, approved
+  notes  String?
+
+  // Approval fields
+  approvedAt DateTime?
+  approvedBy String?
+  source     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relaciones
-  tenant                  Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
   @@index([tenantId])
   @@index([email])
   @@index([status])
   @@index([createdAt])
   @@map("leads")
 }
+
 // ========================================
 // STREAMING - CREDENCIALES
 // ========================================
 
 model Credential {
-  id               String          @id @default(uuid())
-  tenantId         Int
-  serviceName      StreamingService
-  email            String
-  password         String          // Encriptada en la aplicación
-  pin              String?         // Opcional
-  maxProfiles      Int?            // Opcional
-  sharedWith       Json?           // Opcional: array de información de perfiles compartidos
-  isActive         Boolean         @default(true)
-  accessExpiresAt  DateTime?       // Opcional: fecha de expiración del acceso
-  metadata         Json?           // Extra data específica del servicio
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id              String           @id @default(uuid())
+  tenantId        Int
+  productId       String?
+  status          String           @default("available") // available|reserved|delivered|revoked|expired
+  reservedAt      DateTime?
+  deliveredAt     DateTime?
+  serviceName     StreamingService
+  email           String
+  password        String // Encriptada en la aplicación
+  pin             String? // Opcional
+  maxProfiles     Int? // Opcional
+  sharedWith      Json? // Opcional: array de información de perfiles compartidos
+  isActive        Boolean          @default(true)
+  accessExpiresAt DateTime? // Opcional: fecha de expiración del acceso
+  metadata        Json? // Extra data específica del servicio
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   // Relaciones
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  services Service[]
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product           Product?          @relation(fields: [productId], references: [id], onDelete: SetNull)
+  services          Service[]
+  digitalDeliveries DigitalDelivery[]
 
   @@unique([tenantId, serviceName, email])
   @@index([tenantId])
+  @@index([tenantId, productId])
+  @@index([tenantId, status])
+  @@index([tenantId, productId, status])
   @@index([serviceName])
   @@index([isActive])
   @@map("credentials")
@@ -580,16 +608,16 @@ model Credential {
 // ========================================
 
 model Service {
-  id                 String        @id @default(uuid())
+  id                 String           @id @default(uuid())
   tenantId           Int
   credentialId       String
   serviceName        StreamingService
-  monthlySubscribers Int           @default(0)
-  profileCount       Int           @default(0)
-  status             ServiceStatus @default(active)
-  metadata           Json?         // Extra data (price, renewal date, etc)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  monthlySubscribers Int              @default(0)
+  profileCount       Int              @default(0)
+  status             ServiceStatus    @default(active)
+  metadata           Json? // Extra data (price, renewal date, etc)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   // Relaciones
   tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -608,22 +636,262 @@ model Service {
 // ========================================
 
 model BillingEvent {
-  id          String              @id @default(uuid())
-  tenantId    Int
-  eventType   BillingEventType
-  status      BillingEventStatus  @default(pending)
-  amount      Int                 // En centavos
-  currency    BillingCurrency     @default(USD)
-  metadata    Json?               // { orderId, paymentProvider, transactionId, description, etc }
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  id        String             @id @default(uuid())
+  tenantId  Int
+  eventType BillingEventType
+  status    BillingEventStatus @default(pending)
+  amount    Int // En centavos
+  currency  BillingCurrency    @default(USD)
+  metadata  Json? // { orderId, paymentProvider, transactionId, description, etc }
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
 
   // Relaciones
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
-  @@index([eventType])
-  @@index([status])
-  @@index([createdAt])
   @@map("billing_events")
+}
+
+// ========================================
+// PLANS & ENTITLEMENTS
+// ========================================
+
+model Plan {
+  id              String   @id @default(uuid()) @db.Uuid
+  code            String   @unique
+  name            String
+  description     String?
+  priceCents      BigInt
+  currency        String   @default("USD")
+  billingInterval String   @default("month") // month | year | one_time
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  entitlements  PlanEntitlement[]
+  subscriptions TenantSubscription[]
+
+  @@index([code])
+  @@index([isActive])
+  @@map("plans")
+}
+
+model PlanEntitlement {
+  id              String   @id @default(uuid()) @db.Uuid
+  planId          String   @db.Uuid
+  entitlementCode String
+  createdAt       DateTime @default(now())
+
+  // Relaciones
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, entitlementCode])
+  @@index([planId])
+  @@index([entitlementCode])
+  @@map("plan_entitlements")
+}
+
+model TenantEntitlement {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  Int
+  code      String // base_wholesale, preferential_20, crm_basic, crm_pro, storefront
+  status    String    @default("enabled") // enabled | disabled
+  startsAt  DateTime?
+  endsAt    DateTime?
+  source    String    @default("manual") // signup | subscription | addon | trial | manual
+  sourceRef String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relaciones
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([code])
+  @@index([status])
+  @@index([source])
+  @@map("tenant_entitlements")
+}
+
+// ========================================
+// SUBSCRIPTIONS
+// ========================================
+
+model TenantSubscription {
+  id                     String    @id @default(uuid()) @db.Uuid
+  tenantId               Int
+  planId                 String    @db.Uuid
+  status                 String    @default("active") // active|trialing|past_due|canceled|paused|expired
+  provider               String // stripe|paypal|coinpal
+  providerSubscriptionId String?
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean   @default(false)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  // Relaciones
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@unique([provider, providerSubscriptionId])
+  @@index([tenantId])
+  @@index([planId])
+  @@index([status])
+  @@index([provider])
+  @@map("tenant_subscriptions")
+}
+
+// ========================================
+// PRICING RULES
+// ========================================
+
+model TenantPricingRule {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   Int
+  ruleType   String // global_percent | category_percent | product_percent
+  percentOff Decimal   @db.Decimal(5, 2)
+  categoryId String?
+  productId  String?
+  priority   Int       @default(100)
+  isActive   Boolean   @default(true)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relaciones
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  product  Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, isActive, priority])
+  @@index([tenantId, productId])
+  @@index([tenantId, categoryId])
+  @@map("tenant_pricing_rules")
+}
+
+// ========================================
+// WALLET
+// ========================================
+
+model TenantWallet {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     Int      @unique
+  currency     String   @default("USD")
+  balanceCents BigInt   @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+
+  @@index([tenantId])
+  @@map("tenant_wallets")
+}
+
+model WalletTransaction {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      Int
+  walletId      String   @db.Uuid
+  type          String // topup | purchase | refund | adjustment
+  amountCents   BigInt
+  status        String   @default("posted") // pending | posted | void
+  referenceType String?
+  referenceId   String?  @db.Uuid
+  createdAt     DateTime @default(now())
+
+  // Relaciones
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  wallet TenantWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([walletId, createdAt])
+  @@index([status, createdAt])
+  @@map("wallet_transactions")
+}
+
+// ========================================
+// DIGITAL DELIVERY
+// ========================================
+
+model DigitalDelivery {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     Int
+  orderId      String
+  orderItemId  String
+  credentialId String?
+  customerId   String?
+  status       String    @default("pending") // pending | delivered | expired | revoked
+  deliveredAt  DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  // Relaciones
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItem  OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  credential Credential? @relation(fields: [credentialId], references: [id], onDelete: SetNull)
+  customer   Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  crmOutbox  CrmOutbox[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, customerId])
+  @@index([tenantId, expiresAt])
+  @@map("digital_deliveries")
+}
+
+// ========================================
+// CRM AUTOMATIONS
+// ========================================
+
+model CrmAutomation {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      Int
+  name          String
+  channel       String // email | sms | whatsapp
+  trigger       String // before_expiration | after_purchase | manual_campaign
+  offsetMinutes Int?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relaciones
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isActive])
+  @@map("crm_automations")
+}
+
+// ========================================
+// CRM OUTBOX (Message queue)
+// ========================================
+
+model CrmOutbox {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   Int
+  customerId String? // TEXT - matches Customer.id type
+  deliveryId String?   @db.Uuid // UUID-string - matches DigitalDelivery.id type
+  channel    String // email | sms | whatsapp
+  to         String
+  subject    String?
+  body       String
+  status     String    @default("queued") // queued | sent | failed | canceled
+  sendAt     DateTime
+  sentAt     DateTime?
+  error      String?
+  createdAt  DateTime  @default(now())
+
+  // Relaciones
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  delivery DigitalDelivery? @relation(fields: [deliveryId], references: [id], onDelete: SetNull)
+
+  @@index([status, sendAt])
+  @@index([tenantId, createdAt])
+  @@map("crm_outbox")
 }
